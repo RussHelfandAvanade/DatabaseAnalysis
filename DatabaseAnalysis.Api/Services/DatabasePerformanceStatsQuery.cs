@@ -78,73 +78,140 @@ CROSS APPLY SYS.DM_EXEC_QUERY_PLAN (TopConsumerQueries_CTE.plan_handle) AS qp
 WHERE qp.query_plan IS NOT NULL 
   AND db_name(qp.dbid) IS NOT NULL;";
 
-            var credential = new DefaultAzureCredential(new DefaultAzureCredentialOptions
+            try
             {
-                ExcludeInteractiveBrowserCredential = true
-            });
-            var tokenRequestContext = new TokenRequestContext(new[] { "https://database.windows.net//.default" });
-            AccessToken token = await credential.GetTokenAsync(tokenRequestContext);
+                // Try with timeout protection
+                using var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                var cancellationToken = cancellationTokenSource.Token;
 
+                // Try with ManagedIdentityCredential directly first (most reliable in Azure)
+                try
+                {
+                    Console.WriteLine("Attempting authentication with ManagedIdentityCredential...");
+                    var managedCredential = new ManagedIdentityCredential();
+                    var tokenRequestContext = new TokenRequestContext(new[] { "https://database.windows.net//.default" });
+                    var token = await managedCredential.GetTokenAsync(tokenRequestContext, cancellationToken);
+                    Console.WriteLine("Successfully authenticated with ManagedIdentityCredential");
+
+                    // Proceed with database connection
+                    return await ExecuteDatabaseQueryAsync(token.Token, sql, stats, cancellationToken);
+                }
+                catch (Exception managedIdEx)
+                {
+                    Console.WriteLine($"ManagedIdentityCredential failed: {managedIdEx.Message}");
+                    Console.WriteLine("Falling back to DefaultAzureCredential...");
+
+                    var credentialOptions = new DefaultAzureCredentialOptions
+                    {
+                        ExcludeInteractiveBrowserCredential = true,
+                        ExcludeAzurePowerShellCredential = true,
+                        ExcludeVisualStudioCredential = true,
+                        ExcludeAzureCliCredential = true,
+                        ExcludeSharedTokenCacheCredential = true
+                    };
+
+                    var credential = new DefaultAzureCredential(credentialOptions);
+                    var tokenRequestContext = new TokenRequestContext(new[] { "https://database.windows.net//.default" });
+
+                    Console.WriteLine("Requesting token from DefaultAzureCredential...");
+                    var token = await credential.GetTokenAsync(tokenRequestContext, cancellationToken);
+                    Console.WriteLine("Successfully authenticated with DefaultAzureCredential");
+
+                    // Proceed with database connection
+                    return await ExecuteDatabaseQueryAsync(token.Token, sql, stats, cancellationToken);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                throw new TimeoutException("Authentication timed out after 30 seconds. Please check if the managed identity is configured correctly.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Authentication failed: {ex.GetType().Name}: {ex.Message}");
+                if (ex.InnerException != null)
+                    Console.WriteLine($"Inner exception: {ex.InnerException.GetType().Name}: {ex.InnerException.Message}");
+
+                throw new Exception($"Failed to authenticate to Azure SQL Database. Error: {ex.Message}", ex);
+            }
+        }
+
+        // Helper method to execute the query after authentication
+        private async Task<List<DatabasePerformanceStat>> ExecuteDatabaseQueryAsync(string accessToken, string sql, List<DatabasePerformanceStat> stats, CancellationToken cancellationToken)
+        {
             using (var conn = new SqlConnection(_connectionString))
             {
-                conn.AccessToken = token.Token;
+                conn.AccessToken = accessToken;
                 using (var cmd = new SqlCommand(sql, conn))
                 {
-                    await conn.OpenAsync();
-                    using (var reader = await cmd.ExecuteReaderAsync())
+                    try
                     {
-                        while (await reader.ReadAsync())
+                        Console.WriteLine("Opening SQL connection...");
+                        await conn.OpenAsync(cancellationToken);
+                        Console.WriteLine("SQL connection opened successfully");
+
+                        using (var reader = await cmd.ExecuteReaderAsync(cancellationToken))
                         {
-                            var stat = new DatabasePerformanceStat
+                            while (await reader.ReadAsync(cancellationToken))
                             {
-                                ServerName = reader["servername"] as string ?? string.Empty,
-                                DatabaseName = reader["database_name"] as string ?? string.Empty,
-                                TotalLogicalReads = reader["TOTAL_LOGICAL_READS"] as long? ?? 0,
-                                TotalLogicalWrites = reader["TOTAL_LOGICAL_WRITES"] as long? ?? 0,
-                                ExecutionCount = reader["EXECUTION_COUNT"] != DBNull.Value ? Convert.ToInt32(reader["EXECUTION_COUNT"]) : 0,
-                                IoTotal = reader["IO_TOTAL"] as long? ?? 0,
-                                AvgCpuTime = reader["AvgCPUTime"] as long? ?? 0,
-                                StatementText = reader["statement_text"] as string ?? string.Empty,
-                                SqlHandle = reader["sql_handle"] as string ?? string.Empty,
-                                PlanHandle = reader["plan_handle"] as string ?? string.Empty,
-                                QueryPlan = reader["query_plan"] as string ?? string.Empty
-                            };
-                            // Exclude if query_plan XML has a StatisticsInfo element with Table attribute starting with sys or [sys
-                            bool skip = false;
-                            if (!string.IsNullOrEmpty(stat.QueryPlan))
-                            {
-                                try
+                                var stat = new DatabasePerformanceStat
                                 {
-                                    var xml = XElement.Parse(stat.QueryPlan);
-                                    var ns = xml.GetDefaultNamespace();
-                                    // Existing logic: skip if StatisticsInfo Table attribute starts with sys or [sys
-                                    var statsInfos = xml.Descendants(ns + "StatisticsInfo");
-                                    skip = statsInfos.Any(si =>
+                                    ServerName = reader["servername"] as string ?? string.Empty,
+                                    DatabaseName = reader["database_name"] as string ?? string.Empty,
+                                    TotalLogicalReads = reader["TOTAL_LOGICAL_READS"] as long? ?? 0,
+                                    TotalLogicalWrites = reader["TOTAL_LOGICAL_WRITES"] as long? ?? 0,
+                                    ExecutionCount = reader["EXECUTION_COUNT"] != DBNull.Value ? Convert.ToInt32(reader["EXECUTION_COUNT"]) : 0,
+                                    IoTotal = reader["IO_TOTAL"] as long? ?? 0,
+                                    AvgCpuTime = reader["AvgCPUTime"] as long? ?? 0,
+                                    StatementText = reader["statement_text"] as string ?? string.Empty,
+                                    SqlHandle = reader["sql_handle"] as string ?? string.Empty,
+                                    PlanHandle = reader["plan_handle"] as string ?? string.Empty,
+                                    QueryPlan = reader["query_plan"] as string ?? string.Empty
+                                };
+
+                                // Process the query plan filtering (existing code)
+                                bool skip = false;
+                                if (!string.IsNullOrEmpty(stat.QueryPlan))
+                                {
+                                    try
                                     {
-                                        var tableAttr = si.Attribute("Table");
-                                        return tableAttr != null &&
-                                            (tableAttr.Value.StartsWith("sys", StringComparison.OrdinalIgnoreCase) ||
-                                             tableAttr.Value.StartsWith("[sys", StringComparison.OrdinalIgnoreCase));
-                                    });
-                                    // New logic: skip if any StmtSimple element's StatementText contains " sys."
-                                    if (!skip)
-                                    {
-                                        var stmtSimples = xml.Descendants(ns + "StmtSimple");
-                                        skip = stmtSimples.Any(stmt =>
+                                        var xml = XElement.Parse(stat.QueryPlan);
+                                        var ns = xml.GetDefaultNamespace();
+                                        // Existing logic: skip if StatisticsInfo Table attribute starts with sys or [sys
+                                        var statsInfos = xml.Descendants(ns + "StatisticsInfo");
+                                        skip = statsInfos.Any(si =>
                                         {
-                                            var stmtTextAttr = stmt.Attribute("StatementText");
-                                            return stmtTextAttr != null && stmtTextAttr.Value.Contains(" sys.", StringComparison.OrdinalIgnoreCase);
+                                            var tableAttr = si.Attribute("Table");
+                                            return tableAttr != null &&
+                                                (tableAttr.Value.StartsWith("sys", StringComparison.OrdinalIgnoreCase) ||
+                                                 tableAttr.Value.StartsWith("[sys", StringComparison.OrdinalIgnoreCase));
                                         });
+                                        // New logic: skip if any StmtSimple element's StatementText contains " sys."
+                                        if (!skip)
+                                        {
+                                            var stmtSimples = xml.Descendants(ns + "StmtSimple");
+                                            skip = stmtSimples.Any(stmt =>
+                                            {
+                                                var stmtTextAttr = stmt.Attribute("StatementText");
+                                                return stmtTextAttr != null && stmtTextAttr.Value.Contains(" sys.", StringComparison.OrdinalIgnoreCase);
+                                            });
+                                        }
                                     }
+                                    catch { /* ignore XML parse errors, do not skip */ }
                                 }
-                                catch { /* ignore XML parse errors, do not skip */ }
+
+                                if (!skip)
+                                    stats.Add(stat);
                             }
-                            if (!skip)
-                                stats.Add(stat);
                         }
+                    }
+                    catch (SqlException sqlEx)
+                    {
+                        Console.WriteLine($"SQL Exception: {sqlEx.Number} - {sqlEx.Message}");
+                        throw;
                     }
                 }
             }
+
             return stats;
         }
     }
