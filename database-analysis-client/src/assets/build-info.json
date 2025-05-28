@@ -1,8 +1,20 @@
 {
-  "buildDate": "2025-05-28T16:30:00Z",
-  "version": "1.0.4",
+  "buildDate": "2025-05-28T18:45:00Z",
+  "version": "1.0.5",
   "buildInfo": {
     "environment": "production",
-    "backendUrl": "https://databaseanalysisbackend-g4f4dneed4f2f8ad.westus-01.azurewebsites.net"
+    "backendUrl": "https://databaseanalysisbackend-g4f4dneed4f2f8ad.westus-01.azurewebsites.net",
+    "fixes": [
+      "Updated CORS configuration",
+      "Improved Static Web App routing",
+      "Enhanced API call fallback mechanism",
+      "Added retry logic for API calls",
+      "Fixed Azure Static Web App configuration"
+    ]
+  },
+  "deploymentInfo": {
+    "platform": "Azure Static Web Apps",
+    "builder": "GitHub Actions",
+    "routingConfiguration": "staticwebapp.config.json"
   }
 }
