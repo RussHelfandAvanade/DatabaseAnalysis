@@ -16,7 +16,8 @@ app.UseCors(policy =>
           "https://agreeable-tree-0ccafbf1e.azurestaticapps.net",
           "https://agreeable-tree-0ccafbf1e-6.azurestaticapps.net",
           "https://*.azurestaticapps.net",
-          "https://databaseanalysisbackend-g4f4dneed4f2f8ad.westus-01.azurewebsites.net")
+          "https://databaseanalysisbackend-g4f4dneed4f2f8ad.westus-01.azurewebsites.net",
+          "https://agreeable-tree-0ccafbf1e.6.azurestaticapps.net")
           .AllowAnyHeader()
           .AllowAnyMethod()
           .AllowCredentials();
