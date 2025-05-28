@@ -1,0 +1,108 @@
+import { CommonModule } from '@angular/common';
+import { Component, inject } from '@angular/core';
+import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { Observable } from 'rxjs';
+import { DatabaseStoreService } from './database-store.service';
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  template: `
+    <div style="padding:2rem">
+      <h1>Database Analysis</h1>
+      <form (ngSubmit)="analyze()" style="margin-bottom: 1rem; display: flex; gap: 1rem; align-items: flex-end;">
+        <div>
+          <label>Email (User Name):<br>
+            <input [formControl]="userEmail" type="email" required placeholder="user@domain.com" />
+          </label>
+        </div>
+        <div>
+          <label>Azure SQL Server Name:<br>
+            <input [formControl]="databaseServerName" required placeholder="myazuresqlserver" />
+          </label>
+        </div>
+        <div>
+          <label>Database Name:<br>
+            <input [formControl]="databaseName" required placeholder="mydatabasename" />
+          </label>
+        </div>
+        <button type="submit">Analyze Database</button>
+      </form>
+      <div *ngIf="loading$ | async">Loading...</div>
+      <div *ngIf="error$ | async as error">Error: {{error}}</div>
+      <table *ngIf="stats$ | async as stats" class="perf-table">
+        <thead>
+          <tr>
+            <th>Server</th>
+            <th>Database</th>
+            <th>Total Logical Reads</th>
+            <th>Total Logical Writes</th>
+            <th>Execution Count</th>
+            <th>IO Total</th>
+            <th>Avg CPU Time</th>
+            <th>Statement Text</th>
+            <th>SQL Handle</th>
+            <th>Plan Handle</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let stat of stats">
+            <td>{{stat.serverName}}</td>
+            <td>{{stat.databaseName}}</td>
+            <td>{{stat.totalLogicalReads}}</td>
+            <td>{{stat.totalLogicalWrites}}</td>
+            <td>{{stat.executionCount}}</td>
+            <td>{{stat.ioTotal}}</td>
+            <td>{{stat.avgCpuTime}}</td>
+            <td style="max-width: 400px; overflow-x: auto; white-space: pre-line;">{{stat.statementText}}</td>
+            <td style="max-width: 120px; overflow-x: auto;">{{stat.sqlHandle}}</td>
+            <td style="max-width: 120px; overflow-x: auto;">{{stat.planHandle}}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  `,
+  styles: [
+    `
+      .perf-table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-top: 1rem;
+      }
+      .perf-table th, .perf-table td {
+        border: 1px solid #ccc;
+        padding: 0.5rem;
+        text-align: left;
+        font-size: 0.95rem;
+      }
+      .perf-table th {
+        background: #f4f4f4;
+      }
+      .perf-table td {
+        background: #fff;
+      }
+    `
+  ]
+})
+export class AppComponent {
+  userEmail = new FormControl('');
+  databaseServerName = new FormControl('');
+  databaseName = new FormControl('');
+  
+  private dbStore = inject(DatabaseStoreService);
+  
+  stats$: Observable<any[]> = this.dbStore.getStats();
+  loading$: Observable<boolean> = this.dbStore.getLoading();
+  error$: Observable<any> = this.dbStore.getError();
+
+  analyze() {
+    if (this.userEmail.value && this.databaseServerName.value && this.databaseName.value) {
+      this.dbStore.dispatchAnalyzeDatabase(
+        this.userEmail.value,
+        this.databaseServerName.value,
+        this.databaseName.value
+      );
+    }
+  }
+}

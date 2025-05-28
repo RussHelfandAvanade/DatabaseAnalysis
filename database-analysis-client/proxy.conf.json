@@ -1,0 +1,8 @@
+{
+  "/analyzedatabase/*": {
+    "target": "http://localhost:7243",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug"
+  }
+}

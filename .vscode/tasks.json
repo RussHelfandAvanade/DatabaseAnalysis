@@ -1,0 +1,87 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+                "${workspaceFolder}/DatabaseAnalysis.sln",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "publish",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "publish",
+                "${workspaceFolder}/DatabaseAnalysis.sln",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "watch",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "watch",
+                "run",
+                "--project",
+                "${workspaceFolder}/DatabaseAnalysis.sln"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "npm: start",
+            "type": "npm",
+            "script": "start",
+            "isBackground": true,
+            "options": {
+                "cwd": "${workspaceFolder}/database-analysis-client"
+            },
+            "problemMatcher": {
+                "owner": "typescript",
+                "pattern": "$tsc",
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": ".*",
+                    "endsPattern": "^\\s*➜  press h + enter to show help\\."
+                }
+            }
+        },
+        {
+            "label": "build-and-start-angular",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "build",
+                "npm: start"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "start-frontend",
+            "type": "shell",
+            "command": "npm start",
+            "options": {
+                "cwd": "${workspaceFolder}/database-analysis-client"
+            },
+            "isBackground": true,
+            "problemMatcher": "$tsc"
+        },
+        {
+            "label": "open-edge-localhost-4201",
+            "type": "shell",
+            "command": "start msedge http://localhost:4201",
+            "dependsOn": ["npm: start"],
+            "dependsOrder": "sequence",
+            "isBackground": false,
+            "problemMatcher": []
+        }
+    ]
+}

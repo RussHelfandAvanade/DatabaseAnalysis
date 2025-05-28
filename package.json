@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "@ngrx/effects": "^19.2.0",
+    "@ngrx/store": "^19.2.0",
+    "@ngrx/store-devtools": "^19.2.0"
+  }
+}

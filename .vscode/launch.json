@@ -1,0 +1,57 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": ".NET Core Launch (web)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/DatabaseAnalysis.Api/bin/Debug/net9.0/DatabaseAnalysis.API.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/DatabaseAnalysis.Api",
+      "stopAtEntry": false,
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+      },
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    {
+      "name": "Angular",
+      "type": "msedge",
+      "request": "launch",
+      "preLaunchTask": "npm: start",
+      "url": "http://localhost:4201",
+      "webRoot": "${workspaceFolder}/database-analysis-client",
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "Local:\\s*(https?://localhost:4201)"
+      }
+    },
+    {
+      "name": "Full Stack (Angular + .NET)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-and-start-angular",
+      "program": "${workspaceFolder}/DatabaseAnalysis.Api/bin/Debug/net9.0/DatabaseAnalysis.Api.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/DatabaseAnalysis.Api",
+      "stopAtEntry": false,
+      "console": "internalConsole",
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Backend + Frontend",
+      "configurations": [
+        ".NET Core Launch (web)",
+        "Angular"
+      ]
+    }
+  ]
+}
