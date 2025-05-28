@@ -13,10 +13,13 @@ app.UseCors(policy =>
 {
     policy.WithOrigins(
           "http://localhost:4201",
-          "https://agreeable-tree-0ccafbf1e.6.azurestaticapps.net",
-          "databaseanalysisbackend-g4f4dneed4f2f8ad.westus-01.azurewebsites.net")
+          "https://agreeable-tree-0ccafbf1e.azurestaticapps.net",
+          "https://agreeable-tree-0ccafbf1e-6.azurestaticapps.net",
+          "https://*.azurestaticapps.net",
+          "https://databaseanalysisbackend-g4f4dneed4f2f8ad.westus-01.azurewebsites.net")
           .AllowAnyHeader()
-          .AllowAnyMethod();
+          .AllowAnyMethod()
+          .AllowCredentials();
 });
 
 // Configure the HTTP request pipeline.
