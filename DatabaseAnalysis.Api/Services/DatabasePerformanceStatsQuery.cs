@@ -286,8 +286,8 @@ WHERE qp.query_plan IS NOT NULL
         // Helper method to check for SQL credentials
         private bool TryGetSqlCredentials(out string username, out string password)
         {
-            username = Environment.GetEnvironmentVariable("SQL_USERNAME");
-            password = Environment.GetEnvironmentVariable("SQL_PASSWORD");
+            username = Environment.GetEnvironmentVariable("SQL_USERNAME") ?? String.Empty;
+            password = Environment.GetEnvironmentVariable("SQL_PASSWORD") ?? String.Empty;
 
             return !string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(password);
         }
