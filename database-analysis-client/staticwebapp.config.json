@@ -1,0 +1,12 @@
+{
+  "routes": [
+    {
+      "route": "/api/{*rest}",
+      "rewrite": "https://hospitalitydemo-dbhgaeegdncjdjbq.westus-01.azurewebsites.net/api/{rest}"
+    }
+  ],
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": ["/api/*"]
+  }
+}

@@ -11,29 +11,32 @@ var app = builder.Build();
 // Enable CORS for frontend running on http://localhost:4201
 app.UseCors(policy =>
 {
-    policy.WithOrigins("http://localhost:4201")
+    policy.WithOrigins(
+          "http://localhost:4201",
+          "https://agreeable-tree-0ccafbf1e.6.azurestaticapps.net",
+          "databaseanalysisbackend-g4f4dneed4f2f8ad.westus-01.azurewebsites.net")
           .AllowAnyHeader()
           .AllowAnyMethod();
 });
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+//if (app.Environment.IsDevelopment())
+//{
+app.UseSwagger();
+app.UseSwaggerUI();
+// Redirect root URL to Swagger UI
+app.Use(async (context, next) =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-    // Redirect root URL to Swagger UI
-    app.Use(async (context, next) =>
+    if (context.Request.Path == "/")
     {
-        if (context.Request.Path == "/")
-        {
-            context.Response.Redirect("/swagger/index.html");
-            return;
-        }
-        await next();
-    });
-}
+        context.Response.Redirect("/swagger/index.html");
+        return;
+    }
+    await next();
+});
+//}
 
-// app.UseHttpsRedirection(); // Ensure this remains commented out or removed for HTTP only
+app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
 
