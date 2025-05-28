@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Observable } from 'rxjs';
+import { environment } from '../environments/environment';
 import { DatabaseStoreService } from './database-store.service';
 
 @Component({
@@ -90,6 +91,14 @@ import { DatabaseStoreService } from './database-store.service';
           <button class="clipboard-btn" (click)="copyToClipboard(modalValue)">Copy to Clipboard</button>
           <span *ngIf="clipboardSuccess" class="clipboard-success">Copied!</span>
         </div>
+      </div>
+
+      <!-- Debug Info -->
+      <div class="debug-info">
+        <h2>Debug Information</h2>
+        <p><strong>Current Domain:</strong> {{ debugInfo.currentDomain }}</p>
+        <p><strong>Build Time:</strong> {{ debugInfo.buildTime }}</p>
+        <p><strong>Environment:</strong> {{ debugInfo.environment.production ? 'Production' : 'Development' }}</p>
       </div>
     </div>
   `,
@@ -379,6 +388,25 @@ import { DatabaseStoreService } from './database-store.service';
         transition: opacity 0.2s;
         font-family: Arial, Helvetica, sans-serif;
       }
+      .debug-info {
+        margin-top: 2rem;
+        padding: 1.5rem;
+        background: #f4f7fa;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px 0 rgba(44,62,80,0.08);
+        font-size: 0.95rem;
+        color: #333;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      .debug-info h2 {
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        color: #1a2330;
+      }
+      .debug-info p {
+        margin: 0.4rem 0;
+      }
       @media (max-width: 900px) {
         .form { flex-direction: column; gap: 1.2rem; }
         .container { padding: 1.2rem; }
@@ -388,7 +416,7 @@ import { DatabaseStoreService } from './database-store.service';
     `
   ]
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   databaseServerName = new FormControl('');
   databaseName = new FormControl('');
     private dbStore = inject(DatabaseStoreService);
@@ -401,6 +429,17 @@ export class AppComponent {
   modalTitle = '';
   modalValue = '';
   clipboardSuccess = false;
+
+  debugInfo = {
+    currentDomain: '',
+    buildTime: new Date().toISOString(),
+    environment: { ...environment }
+  };
+
+  ngOnInit() {
+    this.debugInfo.currentDomain = window.location.origin;
+    console.log('Debug Info:', this.debugInfo);
+  }
 
   analyze() {
     if (this.databaseServerName.value && this.databaseName.value) {

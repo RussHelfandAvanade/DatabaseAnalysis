@@ -1,0 +1,8 @@
+{
+  "buildDate": "2025-05-28T16:30:00Z",
+  "version": "1.0.4",
+  "buildInfo": {
+    "environment": "production",
+    "backendUrl": "https://databaseanalysisbackend-g4f4dneed4f2f8ad.westus-01.azurewebsites.net"
+  }
+}

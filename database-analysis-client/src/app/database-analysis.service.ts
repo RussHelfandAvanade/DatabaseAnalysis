@@ -7,11 +7,12 @@ import { environment } from '../environments/environment';
 export class DatabaseAnalysisService {
   constructor(private http: HttpClient) {
     // Log environment settings on service initialization
-    console.log('Environment settings:', {
-      production: environment.production,
-      backendApiUrl: environment.backendApiUrl,
-      fullEnvironment: environment
-    });
+    console.log('%c ENVIRONMENT SETTINGS', 'background: red; color: white; font-size: 20px');
+    console.log('%c APP VERSION: May 28, 2025 - 16:30', 'background: blue; color: white; font-size: 16px');
+    console.log('%c Environment:', 'font-weight: bold; font-size: 16px', environment);
+    console.log('%c Current URL:', 'font-weight: bold; font-size: 16px', window.location.href);
+    console.log('%c Production Mode:', 'font-weight: bold; font-size: 16px', environment.production);
+    console.log('%c Backend API URL:', 'font-weight: bold; font-size: 16px', environment.backendApiUrl);
   }
 
   analyzeDatabase(databaseServerName: string, databaseName: string): Observable<any> {
