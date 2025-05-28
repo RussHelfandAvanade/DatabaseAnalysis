@@ -78,8 +78,10 @@ CROSS APPLY SYS.DM_EXEC_QUERY_PLAN (TopConsumerQueries_CTE.plan_handle) AS qp
 WHERE qp.query_plan IS NOT NULL 
   AND db_name(qp.dbid) IS NOT NULL;";
 
-            // Use Azure.Identity's InteractiveBrowserCredential for interactive login
-            var credential = new InteractiveBrowserCredential();
+            var credential = new DefaultAzureCredential(new DefaultAzureCredentialOptions
+            {
+                ExcludeInteractiveBrowserCredential = true
+            });
             var tokenRequestContext = new TokenRequestContext(new[] { "https://database.windows.net//.default" });
             AccessToken token = await credential.GetTokenAsync(tokenRequestContext);
 
