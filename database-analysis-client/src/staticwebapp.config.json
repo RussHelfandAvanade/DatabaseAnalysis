@@ -1,8 +1,7 @@
-{
-  "routes": [
+{  "routes": [
     {
       "route": "/analyzedatabase/*",
-      "rewrite": "https://databaseanalysisbackend-g4f4dneed4f2f8ad.westus-01.azurewebsites.net/analyzedatabase/:*"
+      "rewrite": "https://databaseanalysisbackend-g4f4dneed4f2f8ad.westus-01.azurewebsites.net/analyzedatabase/*"
     }
   ],
   "navigationFallback": {

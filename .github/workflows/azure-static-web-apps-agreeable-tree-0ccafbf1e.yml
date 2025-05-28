@@ -46,7 +46,7 @@ jobs:
           action: "upload"
           output_location: "dist/database-analysis-client"
           app_location: "./database-analysis-client"
-          api_location: "databaseanalysisbackend-g4f4dneed4f2f8ad.westus-01.azurewebsites.net"
+          api_location: ""
           github_id_token: ${{ steps.idtoken.outputs.result }}
           ###### End of Repository/Build Configurations ######
 
